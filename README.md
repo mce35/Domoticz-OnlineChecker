@@ -4,6 +4,8 @@ A simple Domoticz Python plugin to check whether devices are online, based on pi
 
 This can be used to detect mobile phones to do some kind of geofencing.
 
+The plugin is originally based on script described [here](https://www.domoticz.com/wiki/Presence_detection)
+
 ## Plugin Parameters
 
 | Field         | Description |
