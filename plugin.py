@@ -37,7 +37,6 @@ class BasePlugin:
         self.last_reported = {}
 
     def onStart(self):
-        Domoticz.Log('Starting plugin')
         self.devices = Parameters['Mode1'].split(',')
 
         if Parameters['Mode6'] == 'Debug':
