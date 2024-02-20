@@ -12,7 +12,7 @@
             <description>List of IP addresses to check (comma separated)</description>
         </param>
         <param field="Mode2" label="Ping interval" width="75px" default="10">
-            <description>Interval between checks in seconds</description>
+            <description>Interval between checks in seconds (in the range [5, 60])</description>
         </param>
         <param field="Mode3" label="Cooldown" width="75px" default="60">
             <description>Time before updating Domoticz device status when a device goes offline</description>
@@ -60,7 +60,7 @@ class BasePlugin:
     def pingDevice(self, ip):
         cmd = ['/usr/bin/ping', '-q', '-c1', '-W', '1', ip]
         Domoticz.Debug('Ping command: {:s}'.format(' '.join(cmd)))
-        ping_reply = subprocess.run(cmd, capture_output = False, shell = False, timeout = 5)
+        ping_reply = subprocess.run(cmd, capture_output = True, shell = False)
         return bool(ping_reply.returncode == 0)
 
     def timeout(self, last_seen):
@@ -78,7 +78,7 @@ class BasePlugin:
             self.last_seen[ip] = datetime.datetime.now()
             if is_online != self.was_online[ip]:
                 if self.last_reported[ip]:
-                    Domoticz.Log(ip + ' came back online, no need to tell Domoticz.')
+                    Domoticz.Log(ip + ' came back online, no need to update device {:d}'.format(idx))
                 else:
                     Domoticz.Log(ip + ' came online, updating device {:d}'.format(idx))
                     if idx in Devices:
