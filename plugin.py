@@ -4,7 +4,9 @@
 """
 <plugin key="online-checker" name="OnlineChecker" author="mce35" version="0.1.0">
     <description>
-        <h1>Plugin for checking device status, based on ping command. The ping command must be available in /usr/bin/ping</h1><br/>
+        <h1>Plugin for checking device status</h1>
+        This plugin is based on ping or arping command.<br/>
+        The ping command must be available in /usr/bin/ping or arping should be avaible by using sudo<br/>
         <h2>Parameters</h2>
     </description>
     <params>
