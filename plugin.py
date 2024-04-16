@@ -8,7 +8,7 @@
         <h2>Parameters</h2>
     </description>
     <params>
-        <param field="Mode1" label="Devices" width="150px">
+        <param field="Mode1" label="Devices" width="300px">
             <description>List of IP addresses to check (comma separated)</description>
         </param>
         <param field="Mode2" label="Ping interval" width="75px" default="10">
@@ -17,10 +17,20 @@
         <param field="Mode3" label="Cooldown" width="75px" default="60">
             <description>Time before updating Domoticz device status when a device goes offline</description>
         </param>
-        <param field="Mode6" label="Debug" width="75px">
+        <param field="Mode4" label="Ping tool" width="100px">
+          <description>Ping tool to use, default to standard ping. Some devices (smartphones) may not reply to ping and detection may be unreliable (when a smartphone is idle it may not always reply to echo requests).<br/>
+          Arping is more reliable but requires to use sudo. If arping is selected, local user running domoticz needs to be able to run arping through sudo without password.<br/>
+          This can be done by adding in the sudoers file:<br/>
+          username ALL=(ALL) NOPASSWD:/sbin/arping</description>
+          <options>
+            <option label="ping (default)" value="ping" default="true"/>
+            <option label="arping" value="arping"/>
+          </options>
+        </param>
+        <param field="Mode6" label="Debug" width="100px">
           <options>
             <option label="True" value="Debug"/>
-            <option label="False (default)" value="Normal" default="true" />
+            <option label="False (default)" value="Normal" default="true"/>
           </options>
         </param>
     </params>
@@ -35,6 +45,7 @@ class BasePlugin:
         self.last_seen = {}
         self.was_online = {}
         self.last_reported = {}
+        self.use_arping = False
 
     def onStart(self):
         self.devices = Parameters['Mode1'].split(',')
@@ -49,6 +60,9 @@ class BasePlugin:
                 Domoticz.Device(Name='Device '+dev, Unit=unit, TypeName='Switch', Used=1).Create()
             unit += 1
 
+        if Parameters['Mode4'] == 'arping':
+            self.use_arping = True
+
         itvl = 10
         if Parameters['Mode2'] != '':
             itvl = int(Parameters['Mode2'])
@@ -57,7 +71,10 @@ class BasePlugin:
         Domoticz.Heartbeat(itvl)
 
     def pingDevice(self, ip):
-        cmd = ['/usr/bin/ping', '-q', '-c1', '-W', '1', ip]
+        if self.use_arping == False:
+            cmd = ['/usr/bin/ping', '-q', '-c1', '-W', '1', ip]
+        else:
+            cmd = ['/usr/bin/sudo', '/sbin/arping', '-q', '-c1', '-W', '1', ip]
         Domoticz.Debug('Ping command: {:s}'.format(' '.join(cmd)))
         ping_reply = subprocess.run(cmd, capture_output = True, shell = False)
         return bool(ping_reply.returncode == 0)
