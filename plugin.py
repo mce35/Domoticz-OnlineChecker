@@ -29,6 +29,9 @@
             <option label="arping" value="arping"/>
           </options>
         </param>
+        <param field="Mode5" label="Count" width="75px" default="3">
+            <description>Number of ping packets sent for each check (in the range [1, 10])</description>
+        </param>
         <param field="Mode6" label="Debug" width="100px">
           <options>
             <option label="True" value="Debug"/>
@@ -48,6 +51,7 @@ class BasePlugin:
         self.was_online = {}
         self.last_reported = {}
         self.use_arping = False
+        self.ping_count = 3
 
     def onStart(self):
         self.devices = Parameters['Mode1'].split(',')
@@ -58,12 +62,22 @@ class BasePlugin:
         # types / subtypes reference: https://github.com/domoticz/domoticz/blob/master/hardware/hardwaretypes.h
         unit = 1
         for dev in self.devices:
+            Domoticz.Debug('Start checking device: {:s}'.format(dev))
             if (unit not in Devices):
                 Domoticz.Device(Name='Device '+dev, Unit=unit, TypeName='Switch', Used=1).Create()
             unit += 1
 
         if Parameters['Mode4'] == 'arping':
+            Domoticz.Debug('Using arping command')
             self.use_arping = True
+        else:
+            Domoticz.Debug('Using ping command')
+
+        ping_count = 3
+        if Parameters['Mode5'] != '':
+            ping_count = int(Parameters['Mode5'])
+        self.ping_count = max(1, min(ping_count, 10))
+        Domoticz.Debug('Ping count: {:d}'.format(self.ping_count))
 
         itvl = 10
         if Parameters['Mode2'] != '':
@@ -74,11 +88,12 @@ class BasePlugin:
 
     def pingDevice(self, ip):
         if self.use_arping == False:
-            cmd = ['/usr/bin/ping', '-q', '-c1', '-W', '1', ip]
+            cmd = ['/usr/bin/ping', '-n', '-q', '-c', str(self.ping_count), '-W', '1', ip]
         else:
-            cmd = ['/usr/bin/sudo', '/sbin/arping', '-q', '-c1', '-W', '1', ip]
+            cmd = ['/usr/bin/sudo', '/sbin/arping', '-q', '-c', str(self.ping_count), '-C', '1', '-W', '1', ip]
         Domoticz.Debug('Ping command: {:s}'.format(' '.join(cmd)))
         ping_reply = subprocess.run(cmd, capture_output = True, shell = False)
+        Domoticz.Debug('return code: {:d}'.format(ping_reply.returncode))
         return bool(ping_reply.returncode == 0)
 
     def timeout(self, last_seen):
